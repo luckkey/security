@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="namoo.security.v3.service.authetication.da.mybatis.mapper.RoleMapper">
+
+  <select id="selectRole" parameterType="string" resultType="PMSRole">
+		 SELECT rol_id id
+		      , default_page defaultPageURI
+		      , note
+		      , priority
+        FROM sec_role
+        WHERE rol_id = #{id}
+        ORDER BY priority
+	</select>
+	
+	<select id="selectRoleListByUserNo" parameterType="long" resultType="PMSRole">
+		SELECT a.rol_id id
+				 , c.default_page defaultPageURI
+		     , c.note note
+				 , c.priority priority
+		  FROM biz_mu_role a
+		  JOIN sec_role c ON c.rol_id = a.rol_id
+		 WHERE usr_no = #{userNo}
+		 ORDER BY c.priority
+	</select>
+
+</mapper>

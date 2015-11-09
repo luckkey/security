@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="namoo.security.v3.service.user.da.mybatis.mapper.UserMapper">
+
+	<resultMap type="User" id="user-result">
+		<result property="userNo" column="usr_no" />
+		<result property="name" column="name" />
+		<result property="telephoneNumber" column="tel_no" />
+		<result property="email" column="email" />
+		<result property="position" column="position" />
+		<result property="regDate" column="reg_date" />
+		<result property="modDate" column="mod_date" />
+		<result property="engineerRating" column="engineer_rating" />
+		<result property="workExperienceYear" column="work_experience_year" /> <!-- nullValue="0" -->
+		<result property="workExperienceMonth" column="work_experience_month" /> <!-- nullValue="0" -->
+		<result property="skill" column="skill" />
+		<result property="company.no" column="company_no" />
+		<result property="department.no" column="dept_no" />
+	</resultMap>
+
+	<select id="selectUser" parameterType="long" resultMap="user-result">
+		SELECT usr_no
+				, name
+				, tel_no
+				, email
+				, position
+				, reg_date
+				, mod_date
+				, engineer_rating
+				, work_experience_year
+				, work_experience_month
+				, skill
+				, company_no
+				, dept_no
+		  FROM cm_user
+		 WHERE usr_no = #{userNo} AND del_yn = 'N'
+	</select>
+
+	<resultMap type="Account" id="account-result">
+		<result property="userNo" column="usr_no" />
+		<result property="loginId" column="login_id" />
+		<result property="password" column="passwd" />
+		<result property="status" column="status" />
+		<result property="expiredDate" column="expired_date" />
+		<result property="passwordChangeDate" column="passwd_chg_date" />
+		<result property="language" column="lang" />
+		<result property="timeZoneId" column="timezone" />
+		<result property="reserved" column="reserved" />
+		<result property="accountType" column="account_type" />
+	</resultMap>
+
+	<select id="selectAccountByLoginId" parameterType="string" resultMap="account-result">
+		SELECT usr_no
+				, login_id
+				, passwd
+				, status
+				, expired_date
+				, passwd_chg_date
+				, lang
+				, timezone
+				, reserved
+		 FROM cm_user_account
+		WHERE login_id = #{loginId}
+	</select>
+
+</mapper>

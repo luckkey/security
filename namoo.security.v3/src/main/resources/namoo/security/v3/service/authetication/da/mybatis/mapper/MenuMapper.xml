@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="namoo.security.v3.service.authetication.da.mybatis.mapper.MenuMapper">
+
+	<resultMap id="resource-result" type="PMSResource">
+		<result property="resourceId" 						column="RSC_ID"/>
+		<result property="kind" 							column="KIND"/>
+		<result property="name" 							column="NAME"/>
+		<result property="uri" 								column="URI"/>
+		<result property="note" 							column="NOTE"/>
+		<result property="urn" 								column="RSC_URN"/>
+	</resultMap>
+	
+	<resultMap id="menu-result" type="PMSMenu" extends="resource-result">
+		<result property="parentResource.resourceId" 		column="PARENT_RSC_ID"/>
+		<result property="sequence" 						column="SEQ"/>
+	</resultMap>
+	
+	<resultMap id="full-resource-result" type="PMSMenu" extends="menu-result">
+		<result property="authority.writeYN" 	column="WRITE_YN"/>
+		<result property="authority.f1Note" 	column="F1NOTE"/>
+		<result property="authority.f2Note" 	column="F2NOTE"/>
+		<result property="authority.f3Note" 	column="F3NOTE"/>
+		<result property="authority.f4Note" 	column="F4NOTE"/>
+		<result property="authority.f5Note" 	column="F5NOTE"/>
+		<result property="authority.f6Note" 	column="F6NOTE"/>
+		<result property="authority.f7Note" 	column="F7NOTE"/>
+		<result property="authority.f8Note" 	column="F8NOTE"/>
+		<result property="authority.f9Note" 	column="F9NOTE"/>
+		<result property="authority.f10Note" 	column="F10NOTE"/>
+		<result property="authority.f1YN" 		column="F1"/>
+		<result property="authority.f2YN" 		column="F2"/>
+		<result property="authority.f3YN" 		column="F3"/>
+		<result property="authority.f4YN" 		column="F4"/>
+		<result property="authority.f5YN" 		column="F5"/>
+		<result property="authority.f6YN" 		column="F6"/>
+		<result property="authority.f7YN" 		column="F7"/>
+		<result property="authority.f8YN" 		column="F8"/>
+		<result property="authority.f9YN" 		column="F9"/>
+		<result property="authority.f10YN" 		column="F10"/>
+	</resultMap>	
+	
+	<select id="selectMenuScreenListByRole" parameterType="map" resultMap="full-resource-result">
+		SELECT  sr.rsc_id
+		      , sr.kind
+			  , sr.name
+			  , sr.uri
+			  , sr.seq
+			  , sr.note
+			  , sr.parent_rsc_id
+			  , sr.rsc_urn
+			  , sa.read_yn
+			  , sa.write_yn
+		  FROM sec_authority sa 
+		  JOIN sec_resource sr on sr.rsc_id = sa.rsc_id and (sr.kind = 'RES_MENU' or sr.kind= 'RES_DYNA_MENU' or sr.kind='RES_SCREEN') 
+		 WHERE sa.rol_id = #{roleId}
+		 ORDER BY sr.seq
+	</select>	
+
+</mapper>

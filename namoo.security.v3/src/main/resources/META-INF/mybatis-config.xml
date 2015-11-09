@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "HTTP://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+
+	<typeAliases>
+		<!-- user -->
+		<typeAlias alias="User" type="namoo.security.v3.domain.user.entity.UserBDT" />
+		<typeAlias alias="Account" type="namoo.security.v3.domain.user.entity.AccountBDT" />
+		
+		<!-- menu -->
+		<typeAlias alias="PMSMenu" type="namoo.security.v3.domain.authentication.entity.PMSMenu" />
+		<typeAlias alias="PMSResource" type="namoo.security.v3.domain.authentication.entity.PMSResource" />
+		
+		<!-- role -->
+		<typeAlias alias="PMSRole" type="namoo.security.v3.domain.authentication.entity.PMSRole" />
+	</typeAliases>
+
+</configuration>

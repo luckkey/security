@@ -1,45 +1,168 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<beans:beans xmlns="http://www.springframework.org/schema/security"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns:beans="http://www.springframework.org/schema/beans"
-	xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-4.0.xsd
-	http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
-	
-	<http auto-config="true" use-expressions="true">
-		<intercept-url pattern="/login" access="permitAll" />
-		<intercept-url pattern="/login.jsp" access="hasRole('ANONYMOUS')" />
-		<intercept-url pattern="/**" access="hasRole('ROLE_USER')" />
-		<!-- url 패턴에 따른 규칙을 intercept-user을 이용하여 추가해주면 된다. -->
-		
-		<form-login login-page="/login" login-processing-url="/do/login"
-			username-parameter="user_id"  password-parameter="user_password"
-			authentication-success-handler-ref="loginSuccessHandler"
-			authentication-failure-handler-ref="loginFailHandler" />
-			
-		<!-- 로그아웃시 자동로그인쿠키 및 세션아이디 삭제 -->
-		<logout logout-success-url="/login?logout" invalidate-session="true" delete-cookies="JSESSIONID,SPRING_SECURITY_REMEMBER_ME_COOKIE" /> 
+<?xml version="1.0" encoding="utf-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:security="http://www.springframework.org/schema/security" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+    http://www.springframework.org/schema/security
+    http://www.springframework.org/schema/security/spring-security-2.0.4.xsd">
 
-		<!-- 세션종료 후에도 자동로그인하도록 쿠키 활성화 : remember-me-parameter:rememberMe input Box name -->
-		<remember-me remember-me-parameter="rememberMe" remember-me-cookie="SPRING_SECURITY_REMEMBER_ME_COOKIE" token-validity-seconds="1000"/> 
-			
-		<!-- 접근 거부 페이지 -->
-		<access-denied-handler error-page="/denied"/>
-			
-		<!-- <csrf disabled="true"/> -->
-		<!-- spring security 4버전부터 csrf 보호 설정이 기본으로 되어 있어서 사용하지 않으려면 위의 주석을 풀어야 한다.  -->
-	</http>
-	
-	<authentication-manager alias="authenticationManager">
-		<authentication-provider user-service-ref="customUserDetailsService" />
-	</authentication-manager>
-	
-	<beans:bean id="customUserDetailsService" class="namoo.security.exam.security.CustomUserDetailsService" />
-	
-	<beans:bean id="loginSuccessHandler" class="namoo.security.exam.security.LoginSuccessHandler" />
-	<beans:bean id="loginFailHandler" class="namoo.security.exam.security.LoginFailHandler">
-		<beans:property name="exceptionMsgName" value="securityExceptionMessage" />
-		<beans:property name="defaultFailureUrl" value="/login?fail=true" />
-		<beans:property name="useForward" value="true" />
-	</beans:bean>
+	<!-- Spring Security Filter Chain -->
+	<bean id="springSecurityFilterChain" class="org.springframework.security.util.FilterChainProxy">
+		<security:filter-chain-map path-type="ant">
+			<security:filter-chain pattern="/" filters="none" />
+			<security:filter-chain pattern="/login" filters="none" />
+			<security:filter-chain pattern="/**"
+				filters="httpSessionContextIntegrationFilter
+																		              , logoutFilter
+																		              , authenticationProcessingFilter
+																		              , rememberMeProcessingFilter
+																		              , basicProcessingFilter
+																		              , securityContextHolderAwareRequestFilter
+																		              , anonymousProcessingFilter
+																		              , exceptionTranslationFilter
+																                  , filterSecurityInterceptor
+																	                , roleFilter" />
+		</security:filter-chain-map>
+	</bean>
 
-</beans:beans>
+	<!-- =============================================================== -->
+	<!-- FILTERS -->
+	<!-- =============================================================== -->
+	<bean id="roleFilter" class="namoo.security.v3.web.security.I2RoleFilter"/>
+
+	<!-- ===== SESSION_CONTEXT_INTEGRATION_FILTER ====================== -->
+
+	<bean id="httpSessionContextIntegrationFilter" class="org.springframework.security.context.HttpSessionContextIntegrationFilter" />
+
+	<!-- ===== LOGOUT_FILTER =========================================== -->
+
+	<bean id="logoutFilter" class="org.springframework.security.ui.logout.LogoutFilter">
+		<constructor-arg value="/" />
+		<constructor-arg>
+			<list>
+				<bean class="org.springframework.security.ui.logout.SecurityContextLogoutHandler" />
+				<ref bean="rememberMeServices" />
+			</list>
+		</constructor-arg>
+		<property name="filterProcessesUrl" value="/j_security_logout" />
+	</bean>
+
+	<!-- ===== AUTHENTICATION_PROCESSING_FILTER ======================= -->
+
+	<bean id="authenticationProcessingFilter" class="namoo.security.v3.web.security.I2AuthenticationProcessingFilter">
+		<property name="authenticationManager" ref="authenticationManager" />
+		<property name="rememberMeServices" ref="rememberMeServices" />
+		<!-- 인증을 해제할경우 -->
+		<property name="authenticationFailureUrl" value="/login?login_error=1" />
+		<property name="defaultTargetUrl" value="/default" />
+		<property name="alwaysUseDefaultTargetUrl" value="false" />
+		<property name="filterProcessesUrl" value="/j_spring_security_check" />
+		<property name="exceptionMappings">
+			<props>
+				<prop key="org.springframework.security.BadCredentialsException">/login?login_error=2</prop>
+				<!-- 없음..... -->
+				<!-- <prop key="kr.nextree.vizend.web.security.NoAuthorityException">/login?login_error=3</prop> -->
+				<prop key="org.springframework.security.ui.digestauth.NonceExpiredException">/login?login_error=4</prop>
+			</props>
+		</property>
+	</bean>
+
+	<bean id="formAuthenticationEntryPoint" class="namoo.security.v3.web.security.AjaxAwareAuthenticationEntryPoint">
+		<property name="loginFormUrl" value="/login" />
+		<property name="forceHttps" value="false" />
+	</bean>
+
+	<!-- ===== BASIC_PROCESSING_FILTER ================================= -->
+
+	<bean id="basicProcessingFilter" class="namoo.security.v3.web.security.I2BasicProcessingFilter">
+		<property name="authenticationManager" ref="authenticationManager" />
+		<property name="authenticationEntryPoint" ref="basicAuthenticationEntryPoint" />
+	</bean>
+
+	<bean id="basicAuthenticationEntryPoint" class="namoo.security.v3.web.security.I2BasicProcessingFilterEntryPoint">
+	</bean>
+
+	<!-- ===== SERVLET_API_SUPPORT_FILTER ============================== -->
+
+	<bean id="securityContextHolderAwareRequestFilter" class="org.springframework.security.wrapper.SecurityContextHolderAwareRequestFilter" />
+
+	<!-- ===== ANONYMOUS_FILTER ======================================== -->
+
+	<bean id="anonymousProcessingFilter" class="org.springframework.security.providers.anonymous.AnonymousProcessingFilter">
+		<property name="key" value="anonymous" />
+		<property name="userAttribute" value="anonymous,ROLE_ANONYMOUS" />
+	</bean>
+
+	<!-- ===== EXCEPTION_TRANSLATION_FILTER ============================ -->
+
+	<bean id="exceptionTranslationFilter" class="org.springframework.security.ui.ExceptionTranslationFilter">
+		<property name="authenticationEntryPoint" ref="formAuthenticationEntryPoint" />
+		<property name="accessDeniedHandler">
+			<bean class="namoo.security.v3.web.security.AjaxAwareAccessDeniedHandler">
+				<property name="errorPage" value="/common/errors/accessDenied.jsp" />
+			</bean>
+		</property>
+	</bean>
+
+	<bean id="notSaveRequestExceptionTranslationFilter" class="org.springframework.security.ui.ExceptionTranslationFilter">
+		<property name="authenticationEntryPoint" ref="formAuthenticationEntryPoint" />
+		<property name="createSessionAllowed" value="false" />
+		<property name="accessDeniedHandler">
+			<bean class="namoo.security.v3.web.security.AjaxAwareAccessDeniedHandler">
+				<property name="errorPage" value="/common/errors/accessDenied.jsp" />
+			</bean>
+		</property>
+	</bean>
+
+	<!-- ===== REMEMBER_ME_FILDTER ================================= -->
+	<bean id="rememberMeProcessingFilter" class="namoo.security.v3.web.security.I2RememberMeProcessingFilter">
+		<property name="authenticationManager" ref="authenticationManager" />
+		<property name="rememberMeServices" ref="rememberMeServices" />
+	</bean>
+
+	<bean id="rememberMeServices" class="org.springframework.security.ui.rememberme.TokenBasedRememberMeServices">
+		<property name="userDetailsService" ref="userDetailsService" />
+		<!-- 이해가 필요 -->
+		<property name="key" value="vizend.way" />
+	</bean>
+
+	<bean id="rememberMeAuthenticationProvider" class="org.springframework.security.providers.rememberme.RememberMeAuthenticationProvider">
+		<!-- 이해가 필요 -->
+		<property name="key" value="vizend.way" />
+	</bean>
+
+	<bean id="userDetailsService" class="namoo.security.v3.web.security.I2UserDetailsService"/>
+
+	<!-- ===== FILTER_SECURITY_INTERCEPTOR ============================ -->
+	<bean id="filterSecurityInterceptor" class="org.springframework.security.intercept.web.FilterSecurityInterceptor">
+		<property name="authenticationManager" ref="authenticationManager" />
+		<property name="accessDecisionManager" ref="accessDecisionManager" />
+		<property name="objectDefinitionSource" ref="i2ObjectDefinitionSource" />
+	</bean>
+
+	<bean id="i2ObjectDefinitionSource" class="namoo.security.v3.web.security.I2ObjectDefinitionSource"/>
+
+	<bean id="accessDecisionManager" class="org.springframework.security.vote.ConsensusBased">
+		<property name="allowIfAllAbstainDecisions" value="false" />
+		<property name="decisionVoters">
+			<list>
+				<bean class="namoo.security.v3.web.security.I2RoleVoter" />
+			</list>
+		</property>
+	</bean>
+
+	<!-- =============================================================== -->
+	<!-- AUTHENTICATION MANAGER & PROVIDER -->
+	<!-- =============================================================== -->
+
+	<bean id="authenticationManager" class="org.springframework.security.providers.ProviderManager">
+		<property name="providers">
+			<list>
+				<ref local="namoo.security.v3.web.security.I2AuthenticationProvider" />
+				<ref local="rememberMeAuthenticationProvider" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="namoo.security.v3.web.security.I2AuthenticationProvider" class="namoo.security.v3.web.security.I2AuthenticationProvider"/>
+
+</beans>
